@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
 import { CvService } from './cv.service';
 import { CreateCvDto } from './dto/create-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
@@ -18,13 +18,14 @@ export class CvController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.cvService.findOne(+id);
+  findOne(@Param('id') id: number) {
+    return this.cvService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCvDto: UpdateCvDto) {
-    return this.cvService.update(+id, updateCvDto);
+  update(@Param('id',ParseIntPipe) id: number, @Body() updateCvDto: UpdateCvDto) {
+  // update(@Param('id') id: number, @Body() updateCvDto: UpdateCvDto) {
+    return this.cvService.update(id, updateCvDto);
   }
 
   @Delete(':id')
