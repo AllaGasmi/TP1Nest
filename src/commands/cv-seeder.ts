@@ -43,8 +43,8 @@ const app = await NestFactory.createApplicationContext(AppModule);
         Job: randJobTitle(),
         path: 'path/to/file.pdf',
         skillIds: [randomSkill.id],
-        userId: randomUser.id,
       },
+      randomUser.id,
     );
     }
     
