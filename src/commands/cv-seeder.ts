@@ -20,7 +20,7 @@ const app = await NestFactory.createApplicationContext(AppModule);
       email: `${randFirstName()}@mail.com`,
       password: 'password123',
     });
-    // users.push(user);
+    users.push(user);
   }
 
   const skills: Skill[] = [];
@@ -28,12 +28,12 @@ const app = await NestFactory.createApplicationContext(AppModule);
     const skill = await skillService.create({
       designation: randJobTitle(),
     });
-    // skills.push(skill);
+    skills.push(skill);
   }
 
   for (let i = 0; i < 10; i++) {
     const randomUser = users[randNumber({ min: 0, max: users.length - 1 })];
-    const randomSkillId = randNumber({ min: 0, max: skills.length - 1 });
+    const randomSkill = skills[randNumber({ min: 0, max: skills.length - 1 })];
     await cvService.create(
       {
         name: randLastName(),
@@ -42,7 +42,8 @@ const app = await NestFactory.createApplicationContext(AppModule);
         Cin: randUuid(),
         Job: randJobTitle(),
         path: 'path/to/file.pdf',
-        skillIds: [randomSkillId],
+        skillIds: [randomSkill.id],
+        userId: randomUser.id,
       },
     );
     }
