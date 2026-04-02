@@ -4,6 +4,7 @@ import { LoginDto } from './dto/login.dto';
 import { Repository } from 'typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 
@@ -12,6 +13,7 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private jwtService: JwtService,
   ) {}
 
   async register(userData: RegisterDto): Promise<Partial<User>>{
@@ -34,7 +36,7 @@ export class AuthService {
     }
   }
 
-  async login(userData: LoginDto): Promise<Partial<User>> {
+  async login(userData: LoginDto): Promise<{ access_token: string }> {
     const {username, password} = userData;
     const user = await this.userRepository.createQueryBuilder('user')
     .where('user.username = :username or user.email = :username',{username}).getOne();
@@ -42,18 +44,19 @@ export class AuthService {
     if(!user)
       throw new NotFoundException('Username ou password erroné');
     
-    const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(password, salt);
-    if(bcrypt.compare(user.password, hashedPassword)){
-      
-      return {
-        username: user.username,
-        email: user.email,
-        role: user.role
-      };
-    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if(!isPasswordValid)
+      throw new UnauthorizedException('Username ou password erroné');
 
-    throw new NotFoundException('Username ou password erroné')
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+    };
 
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 }

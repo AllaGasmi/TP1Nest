@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CreateCvDto } from './dto/create-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,10 +15,15 @@ export class CvService {
     private readonly userService: UserService,
   ) {}
 
-  async create(createCvDto: CreateCvDto) {
-    const { skillIds, userId, ...cvData } = createCvDto;
+  async create(createCvDto: CreateCvDto, userId: number) {
+    const { skillIds, ...cvData } = createCvDto;
     const skills = skillIds ? await this.skillService.findByIds(skillIds) : [];
-    const user = userId ? await this.userService.findOne(userId)?? undefined : undefined;;
+    const user = await this.userService.findOne(userId);
+    
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     const cv = await this.cvRepo.create({
       ...cvData,
       skills,
@@ -28,29 +33,46 @@ export class CvService {
   }
 
   async findAll() {
-    const result=await this.cvRepo.find({ relations: {user: true, skills:true} });
+    const result = await this.cvRepo.find({ relations: { user: true, skills: true } });
+    return result;
+  }
+
+  // Récupère tous les CVs de l'utilisateur connecté
+  async findByUser(userId: number) {
+    const result = await this.cvRepo.find({
+      where: { user: { id: userId } },
+      relations: { user: true, skills: true },
+    });
     return result;
   }
 
   async findOne(id: number) {
-    const result= await this.cvRepo.findOne({ where: { id }, relations: ['user', 'skills'] });
+    const result = await this.cvRepo.findOne({ where: { id }, relations: ['user', 'skills'] });
     return result;
   }
 
+  // Récupère un CV spécifique si l'utilisateur en est propriétaire
+  async findOneByUser(id: number, userId: number) {
+    const cv = await this.cvRepo.findOne({
+      where: { id, user: { id: userId } },
+      relations: ['user', 'skills'],
+    });
+
+    if (!cv) {
+      throw new ForbiddenException('You do not have access to this CV');
+    }
+
+    return cv;
+  }
+
   async update(id: number, updateCvDto: UpdateCvDto) {
-    const { skillIds, userId, ...cvData } = updateCvDto;
+    const { skillIds, ...cvData } = updateCvDto;
     const cv = await this.cvRepo.findOne({ where: { id }, relations: ['skills', 'user'] });
     if (!cv) {
-      throw new Error('CV not found');
+      throw new NotFoundException('CV not found');
     }
     Object.assign(cv, cvData);
-    if (userId) {
-      const user = await this.userService.findOne(userId);
-      if(!user) {
-        throw new Error('User not found');
-      }
-      cv.user = user;
-    }
+    
     if (skillIds) {
       const skills = await this.skillService.findByIds(skillIds);
       cv.skills = skills;
@@ -59,7 +81,10 @@ export class CvService {
   }
 
   async remove(id: number) {
-    const result= await this.cvRepo.delete(id);
+    const result = await this.cvRepo.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException('CV not found');
+    }
     return result;
   }
 }

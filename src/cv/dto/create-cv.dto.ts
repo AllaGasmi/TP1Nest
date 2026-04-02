@@ -26,13 +26,9 @@ export class CreateCvDto {
     @IsString()
     path: string;
 
-    @ApiProperty({ description: "les identifiants des skills" , type: [Number]})
+    @ApiProperty({ description: "les identifiants des skills" , type: [Number], required: false})
     @IsArray()
-    @ArrayNotEmpty()
+    @IsOptional()
     @IsNumber({}, { each: true })
-    skillIds: number[];
-
-    @ApiProperty({ description: "l'identifiant de l'utilisateur", type: Number})
-    @IsNumber()
-    userId: number;
+    skillIds?: number[];
 }
