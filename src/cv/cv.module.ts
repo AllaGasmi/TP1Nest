@@ -7,6 +7,7 @@ import { SkillModule } from '../skill/skill.module';
 import { UserModule } from '../user/user.module';
 import { AuthModule } from '../auth/auth.module';
 
+
 @Module({
   imports: [TypeOrmModule.forFeature([Cv]), SkillModule, UserModule, AuthModule],
   controllers: [CvController],

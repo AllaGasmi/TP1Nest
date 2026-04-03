@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsStrongPassword, MaxLength } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsStrongPassword, MaxLength } from 'class-validator';
+import { UserRoleEnum } from 'src/enums/user-role.enum';
 
 export class RegisterDto {
   @IsString()
@@ -14,6 +15,10 @@ export class RegisterDto {
   @IsNotEmpty()
   @IsStrongPassword()
   password: string;
+
+  @IsOptional()
+  @IsEnum(UserRoleEnum)
+  role?: UserRoleEnum = UserRoleEnum.USER;
 
   
 }

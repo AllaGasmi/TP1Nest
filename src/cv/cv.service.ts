@@ -6,6 +6,7 @@ import { Cv } from './entities/cv.entity';
 import { Repository } from 'typeorm';
 import { SkillService } from '../skill/skill.service';
 import { UserService } from '../user/user.service';
+import { UserRoleEnum } from 'src/enums/user-role.enum';
 
 @Injectable()
 export class CvService {
@@ -32,9 +33,15 @@ export class CvService {
     return await this.cvRepo.save(cv);
   }
 
-  async findAll() {
+  async findAll(user) {
+    if (user.role === UserRoleEnum.ADMIN){
     const result = await this.cvRepo.find({ relations: { user: true, skills: true } });
     return result;
+    }
+    return await this.cvRepo.find({
+    where: { user: { id: user.id } },
+    relations: { user: true, skills: true },
+  });
   }
 
   // Récupère tous les CVs de l'utilisateur connecté
