@@ -14,6 +14,9 @@ export class User {
   @Column()
     password: string;
 
+  @Column({ type: 'varchar', length: 20, default: 'user' })
+    role: 'admin' | 'user';
+
   @OneToMany(() => Cv, (cv) => cv.user)
     cvs: Cv[];
     

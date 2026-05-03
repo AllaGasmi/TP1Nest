@@ -14,11 +14,23 @@ const app = await NestFactory.createApplicationContext(AppModule);
   const skillService = app.get(SkillService);
 
   const users: User[] = [];
-  for (let i = 0; i < 5; i++) {
+  
+  // Create one admin user
+  const adminUser = await userService.create({
+    username: 'admin_user',
+    email: 'admin@mail.com',
+    password: 'admin123',
+    role: 'admin',
+  });
+  users.push(adminUser);
+  
+  // Create regular users
+  for (let i = 0; i < 4; i++) {
     const user = await userService.create({
-      username: randFirstName(),
-      email: `${randFirstName()}@mail.com`,
+      username: `user_${i + 1}`,
+      email: `user${i + 1}@mail.com`,
       password: 'password123',
+      role: 'user',
     });
     users.push(user);
   }
@@ -44,6 +56,11 @@ const app = await NestFactory.createApplicationContext(AppModule);
         path: 'path/to/file.pdf',
         skillIds: [randomSkill.id],
         userId: randomUser.id,
+      },
+      {
+        userId: randomUser.id,
+        username: randomUser.username,
+        role: randomUser.role,
       },
     );
     }
