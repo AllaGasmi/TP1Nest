@@ -14,15 +14,7 @@ const app = await NestFactory.createApplicationContext(AppModule);
   const skillService = app.get(SkillService);
 
   const users: User[] = [];
-  
-  // Create one admin user
-  const adminUser = await userService.create({
-    username: 'admin_user',
-    email: 'admin@mail.com',
-    password: 'admin123',
-    role: 'admin',
-  });
-  users.push(adminUser);
+
   
   // Create regular users
   for (let i = 0; i < 4; i++) {
