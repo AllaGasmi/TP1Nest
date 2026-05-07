@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query, Req } from '@nestjs/common';
 import { CvService } from './cv.service';
 import { CreateCvDto } from './dto/create-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
@@ -13,7 +13,8 @@ export class CvController {
   }
 
   @Get()
-  findAll() {
+  findAll(@Req() req) {
+    console.log("userId from query:", req.user.userId);
     return this.cvService.findAll();
   }
 

@@ -10,7 +10,7 @@ async function bootstrap() {
     .setTitle('TP 1')
     .setDescription('API documentation pour ce TP')
     .setVersion('1.0')
-    // .addBearerAuth() 
+    .addBearerAuth() 
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
