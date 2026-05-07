@@ -55,4 +55,6 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-verif-app/
+verif-app/node_modules
+verif-app/build
+verif-app/dist
