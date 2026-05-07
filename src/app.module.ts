@@ -6,6 +6,7 @@ import { SkillModule } from './skill/skill.module';
 import { UserModule } from './user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { WebhookModule } from './webhook/webhook.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     UserModule,
     CvModule,
     SkillModule,
+    WebhookModule,
   ],
   controllers: [AppController],
   providers: [AppService],

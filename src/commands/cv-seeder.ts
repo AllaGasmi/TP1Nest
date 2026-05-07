@@ -19,6 +19,7 @@ const app = await NestFactory.createApplicationContext(AppModule);
       username: randFirstName(),
       email: `${randFirstName()}@mail.com`,
       password: 'password123',
+      age: randNumber({ min: 20, max: 50 }),
     });
     users.push(user);
   }

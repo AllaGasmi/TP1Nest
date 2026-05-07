@@ -2,8 +2,8 @@ import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 @Entity()
 export class Skill {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  designation: string;
+  designation!: string;
 }

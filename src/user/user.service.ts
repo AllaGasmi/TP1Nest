@@ -4,17 +4,28 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
+import { WebhookService } from '../webhook/webhook.service';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectRepository(User) private readonly userRepo: Repository<User>) {}
+  constructor(
+    @InjectRepository(User) private readonly userRepo: Repository<User>,
+    private readonly webhookService: WebhookService,
+  ) {}
+
   async create(createUserDto: CreateUserDto) {
     const user = await this.userRepo.save(createUserDto);
+    await this.webhookService.sendUserForValidation({
+      id: user.id,
+      age: user.age,
+      
+    });
+
     return user;
   }
 
   async findAll() {
-    const users = await this.userRepo.find({relations: ['cvs']});
+    const users = await this.userRepo.find({ relations: ['cvs'] });
     return users;
   }
 
@@ -30,7 +41,7 @@ export class UserService {
 
   async remove(id: number) {
     const user = await this.findOne(id);
-    if(user) { 
+    if (user) {
       await this.userRepo.remove(user);
     }
     return user;
