@@ -11,7 +11,7 @@ export class WebhookService {
   }) {
     try {
       await axios.post(this.validationServerUrl, {
-        userId: user.id,
+        id: user.id,
         age: user.age,
         callbackUrl: 'http://localhost:3000/webhook/user-validated',
       });

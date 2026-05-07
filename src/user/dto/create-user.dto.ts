@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString, } from "class-validator";
+import { IsNumber, IsString, } from "class-validator";
 
 export class CreateUserDto {
     @ApiProperty({ description: "le username" , example: "ouma" })
@@ -14,7 +14,7 @@ export class CreateUserDto {
     password!: string;
     
     @ApiProperty({ description: "l'âge" , example: 25 })
-    @IsString()
+    @IsNumber()
     age!: number;
     
 }

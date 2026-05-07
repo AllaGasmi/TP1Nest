@@ -30,11 +30,8 @@
     "@nestjs/swagger": "^11.2.6",
     "@nestjs/typeorm": "^11.0.0",
     "@ngneat/falso": "^8.0.2",
-<<<<<<< Updated upstream
-    "axios": "^1.16.0",
-=======
     "@types/jsonwebtoken": "^9.0.10",
->>>>>>> Stashed changes
+    "axios": "^1.16.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.4",
     "jsonwebtoken": "^9.0.3",
