@@ -31,7 +31,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
         synchronize: true,
       }),
     }),
-    EventEmitterModule.forRoot(),
+    EventEmitterModule.forRoot({ wildcard: true }),
     UserModule,
     CvModule,
     SkillModule,
