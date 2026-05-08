@@ -6,9 +6,10 @@ import { Cv } from './entities/cv.entity';
 import { SkillModule } from '../skill/skill.module';
 import { UserModule } from '../user/user.module';
 import { CvOperation } from './entities/cv-operation.entity';
-
+import { EventEmitterModule } from '@nestjs/event-emitter';
 @Module({
-  imports:[TypeOrmModule.forFeature([Cv, CvOperation]), SkillModule, UserModule],
+  imports:[TypeOrmModule.forFeature([Cv, CvOperation]), SkillModule, UserModule,
+  EventEmitterModule.forRoot()],
   controllers: [CvController],
   providers: [CvService],
 })

@@ -5,7 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.useGlobalPipes(new ValidationPipe({transform: true, whitelist: true }));
+  //await app.useGlobalPipes(new ValidationPipe({transform: true, whitelist: true }));
   const config = new DocumentBuilder()
     .setTitle('TP 1')
     .setDescription('API documentation pour ce TP')

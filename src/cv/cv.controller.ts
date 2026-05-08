@@ -1,16 +1,19 @@
-import { Body, Controller, Delete, Get, MessageEvent, Param, ParseIntPipe, Patch, Post, Sse, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get,  Param, ParseIntPipe, Patch, Post, Sse, UseGuards } from '@nestjs/common';
+import type { MessageEvent } from '@nestjs/common';
 import { CvService } from './cv.service';
 import { CreateCvDto } from './dto/create-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
-import { Observable } from 'rxjs';
+import { fromEvent, map, Observable, merge } from 'rxjs';
 import { CvActorContext } from './cv-actor-context.interface';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { APP_EVENTS } from '../common/constants/app-events';
 
 @Controller('cv')
 @UseGuards(JwtAuthGuard)
 export class CvController {
-  constructor(private readonly cvService: CvService) {}
+  constructor(private readonly cvService: CvService, private eventEmitter: EventEmitter2) {}
 
   @Post()
   create(@Body() createCvDto: CreateCvDto, @CurrentUser() user: any) {
@@ -37,6 +40,33 @@ export class CvController {
     return this.cvService.streamOperations(this.userToActor(user));
   }
 
+
+
+@Sse('sse')
+sse(): Observable<MessageEvent> {
+  return merge(
+    fromEvent(this.eventEmitter, APP_EVENTS.CV_ADD).pipe(
+      map((payload: any) => ({
+        type: 'cv-added',
+        data: payload,
+      })),
+    ),
+
+    fromEvent(this.eventEmitter, APP_EVENTS.CV_UPDATE).pipe(
+      map((payload: any) => ({
+        type: 'cv-updated',
+        data: payload,
+      })),
+    ),
+
+    fromEvent(this.eventEmitter, APP_EVENTS.CV_DELETE).pipe(
+      map((payload: any) => ({
+        type: 'cv-deleted',
+        data: payload,
+      })),
+    ),
+  );
+}
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.cvService.findOne(id);
@@ -53,6 +83,9 @@ export class CvController {
   }
 
   private userToActor(user: any): CvActorContext {
+    if (!user) {
+      throw new Error('User not authenticated. Please enable JwtAuthGuard.');
+    }
     return {
       userId: user.userId,
       username: user.username,

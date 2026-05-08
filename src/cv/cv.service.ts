@@ -11,7 +11,9 @@ import { CvActorContext, CvPersistenceEventPayload } from './cv-actor-context.in
 import { MessageEvent } from '@nestjs/common';
 import { Observable, Subject } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
-
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { APP_EVENTS } from 'src/common/constants/app-events';
+import { UserRoleEnum } from 'src/enums/user-role.enum';
 @Injectable()
 export class CvService {
   private readonly persistenceEvents = new Subject<CvPersistenceEventPayload>();
@@ -21,6 +23,7 @@ export class CvService {
     @InjectRepository(CvOperation) private readonly cvOperationRepo: Repository<CvOperation>,
     private readonly skillService: SkillService,
     private readonly userService: UserService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(createCvDto: CreateCvDto, actor: CvActorContext) {
@@ -33,13 +36,12 @@ export class CvService {
       user,
     });
     const savedCv = await this.cvRepo.save(cv);
-    await this.logOperation('CREATE', savedCv, actor, {
-      createdData: cvData,
-      skillIds,
-      assignedUserId: userId,
+    this.eventEmitter.emit(APP_EVENTS.CV_ADD, {
+      cv: savedCv
     });
     return savedCv;
   }
+    
 
   async findAll() {
     const result=await this.cvRepo.find({ relations: {user: true, skills:true} });
@@ -59,7 +61,9 @@ export class CvService {
     }
     
     // Authorization check: only owner or admin can update
-    if (actor.role !== 'admin' && cv.user?.id !== actor.userId) {
+    console.log('ACTOR:', actor);
+    console.log('CV OWNER:', cv.user?.id);
+    if (actor.role !== UserRoleEnum.ADMIN && cv.user?.id !== actor.userId) {
       throw new Error('Unauthorized: Only CV owner or admin can update');
     }
     const beforeUpdate = {
@@ -90,6 +94,9 @@ export class CvService {
       previousData: beforeUpdate,
       updatedData: updateCvDto,
     });
+    this.eventEmitter.emit(APP_EVENTS.CV_UPDATE, {
+      cv: updatedCv
+    });
     return updatedCv;
   }
 
@@ -101,7 +108,7 @@ export class CvService {
     }
     
     // Authorization check: only owner or admin can delete
-    if (actor.role !== 'admin' && existingCv.user?.id !== actor.userId) {
+    if (actor.role !== UserRoleEnum.ADMIN && existingCv.user?.id !== actor.userId) {
       throw new Error('Unauthorized: Only CV owner or admin can delete');
     }
     
@@ -111,6 +118,9 @@ export class CvService {
         deletedCvId: id,
       });
     }
+    this.eventEmitter.emit(APP_EVENTS.CV_DELETE, {
+      cv: existingCv
+    });
     return result;
   }
 
@@ -124,7 +134,7 @@ export class CvService {
 
   private canAccessEvent(actor: CvActorContext, event: CvPersistenceEventPayload) {
     // Admin can see all operations
-    if (actor.role === 'admin') {
+    if (actor.role === UserRoleEnum.ADMIN) {
       console.log(`Admin ${actor.username} (userId: ${actor.userId}) granted access to event ${event.operationType} on CV ${event.cvId}`);
       return true;
     }

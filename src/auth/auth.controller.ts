@@ -1,20 +1,22 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateUserDto } from '../user/dto/create-user.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { User } from 'src/user/entities/user.entity';
 
-@ApiTags('auth')
-@Controller('auth')
+@Controller()
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  register(@Body() createUserDto: CreateUserDto) {
-    return this.authService.register(createUserDto);
+  register(@Body() registerDto: RegisterDto): Promise<Partial<User>> {
+    return this.authService.register(registerDto);
+  }
+  @Post('login')
+  login(@Body() loginDto: LoginDto): Promise<Partial<User>> {
+    return this.authService.login(loginDto);
   }
 
-  @Post('login')
-  login(@Body() loginDto: { username: string; password: string }) {
-    return this.authService.login(loginDto.username, loginDto.password);
-  }
+  
+
 }
