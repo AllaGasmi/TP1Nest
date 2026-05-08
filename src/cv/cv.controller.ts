@@ -125,12 +125,12 @@ export class CvController {
 
   @Patch(':id')
   update(@Param('id',ParseIntPipe) id: number, @Body() updateCvDto: UpdateCvDto, @CurrentUser() user: any) {
-    return this.cvService.update(id, updateCvDto);
+    return this.cvService.update(id, updateCvDto, user);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.cvService.remove(+id);
+    return this.cvService.remove(+id, user);
   }
 
   private userToActor(user: any): CvActorContext {

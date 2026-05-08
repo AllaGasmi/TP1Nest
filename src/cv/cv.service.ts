@@ -51,7 +51,7 @@ export class CvService {
     return result;
   }
 
-  async update(id: number, updateCvDto: UpdateCvDto) {
+  async update(id: number, updateCvDto: UpdateCvDto, user: any) {
     const { skillIds, userId, ...cvData } = updateCvDto;
     const cv = await this.cvRepo.findOne({ where: { id }, relations: ['skills', 'user'] });
     if (!cv) {
@@ -78,6 +78,9 @@ export class CvService {
       }
       cv.user = user;
     }
+    if (user.role !== UserRoleEnum.ADMIN && cv.user?.id !== user.id) {
+      throw new Error('Unauthorized: Only CV owner or admin can update');
+    }
     if (skillIds) {
       const skills = await this.skillService.findByIds(skillIds);
       cv.skills = skills;
@@ -89,17 +92,17 @@ export class CvService {
     return updatedCv;
   }
 
-  async remove(id: number) {
+  async remove(id: number, user) {
     const existingCv = await this.cvRepo.findOne({ where: { id }, relations: ['user'] });
     
     if (!existingCv) {
       throw new Error('CV not found');
     }
     
-    /*// Authorization check: only owner or admin can delete
-    if (actor.role !== UserRoleEnum.ADMIN && existingCv.user?.id !== actor.userId) {
+    // Authorization check: only owner or admin can delete
+    if (user.role !== UserRoleEnum.ADMIN && existingCv.user?.id !== user.id) {
       throw new Error('Unauthorized: Only CV owner or admin can delete');
-    }*/
+    }
     
     const result = await this.cvRepo.delete(id);
     if (result.affected) {
