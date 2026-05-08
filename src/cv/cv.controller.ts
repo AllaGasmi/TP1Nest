@@ -36,16 +36,32 @@ export class CvController {
     };
   }
 
-  @Sse('events')
+ /* @Sse('events')
   streamOperations(@CurrentUser() user: any): Observable<MessageEvent> {
     return this.cvService.streamOperations(this.userToActor(user));
   }
+*/
 
 
 
   @Sse('sse')
   sse(@CurrentUser() user: any): Observable<MessageEvent> {
-    return merge(
+
+    const CV_EVENTS = [
+        {
+          key: APP_EVENTS.CV_ADD,
+          type: 'cv-added',
+        },
+        {
+          key: APP_EVENTS.CV_UPDATE,
+          type: 'cv-updated',
+        },
+        {
+          key: APP_EVENTS.CV_DELETE,
+          type: 'cv-deleted',
+        },
+    ];
+    /*return merge(
       fromEvent(this.eventEmitter, APP_EVENTS.CV_ADD).pipe(
         map((payload: any) => ({
           type: 'cv-added',
@@ -76,7 +92,32 @@ export class CvController {
       return cvOwnerId === user.userId;
     }),
     );
+    */
+    const streams = CV_EVENTS.map((event) =>
+    fromEvent(this.eventEmitter, event.key).pipe(
+        map((payload: any) => ({
+          type: event.type,
+          data: payload,
+        })),
+      ),
+    );
+    return merge(...streams).pipe(
+    filter((event: any) => {
+
+      if (user.role === UserRoleEnum.ADMIN) {
+        return true;
+      }
+
+      const cvOwnerId =
+        event.data?.cv?.user?.id ??
+        event.data?.cvOwnerId;
+
+      return cvOwnerId === user.userId;
+    }),
+  );
   }
+
+
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.cvService.findOne(id);
@@ -84,12 +125,12 @@ export class CvController {
 
   @Patch(':id')
   update(@Param('id',ParseIntPipe) id: number, @Body() updateCvDto: UpdateCvDto, @CurrentUser() user: any) {
-    return this.cvService.update(id, updateCvDto, this.userToActor(user));
+    return this.cvService.update(id, updateCvDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.cvService.remove(+id, this.userToActor(user));
+    return this.cvService.remove(+id);
   }
 
   private userToActor(user: any): CvActorContext {

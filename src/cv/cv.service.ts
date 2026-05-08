@@ -6,7 +6,6 @@ import { Cv } from './entities/cv.entity';
 import { Repository } from 'typeorm';
 import { SkillService } from '../skill/skill.service';
 import { UserService } from '../user/user.service';
-import { CvOperation, CvOperationType } from './entities/cv-operation.entity';
 import { CvActorContext, CvPersistenceEventPayload } from './cv-actor-context.interface';
 import { MessageEvent } from '@nestjs/common';
 import { Observable, Subject } from 'rxjs';
@@ -20,7 +19,6 @@ export class CvService {
 
   constructor(
     @InjectRepository(Cv) private readonly cvRepo: Repository<Cv>,
-    @InjectRepository(CvOperation) private readonly cvOperationRepo: Repository<CvOperation>,
     private readonly skillService: SkillService,
     private readonly userService: UserService,
     private readonly eventEmitter: EventEmitter2,
@@ -53,19 +51,14 @@ export class CvService {
     return result;
   }
 
-  async update(id: number, updateCvDto: UpdateCvDto, actor: CvActorContext) {
+  async update(id: number, updateCvDto: UpdateCvDto) {
     const { skillIds, userId, ...cvData } = updateCvDto;
     const cv = await this.cvRepo.findOne({ where: { id }, relations: ['skills', 'user'] });
     if (!cv) {
       throw new Error('CV not found');
     }
     
-    // Authorization check: only owner or admin can update
-    console.log('ACTOR:', actor);
-    console.log('CV OWNER:', cv.user?.id);
-    if (actor.role !== UserRoleEnum.ADMIN && cv.user?.id !== actor.userId) {
-      throw new Error('Unauthorized: Only CV owner or admin can update');
-    }
+    
     const beforeUpdate = {
       name: cv.name,
       firstname: cv.firstname,
@@ -90,98 +83,40 @@ export class CvService {
       cv.skills = skills;
     }
     const updatedCv = await this.cvRepo.save(cv);
-    await this.logOperation('UPDATE', updatedCv, actor, {
-      previousData: beforeUpdate,
-      updatedData: updateCvDto,
-    });
     this.eventEmitter.emit(APP_EVENTS.CV_UPDATE, {
       cv: updatedCv
     });
     return updatedCv;
   }
 
-  async remove(id: number, actor: CvActorContext) {
+  async remove(id: number) {
     const existingCv = await this.cvRepo.findOne({ where: { id }, relations: ['user'] });
     
     if (!existingCv) {
       throw new Error('CV not found');
     }
     
-    // Authorization check: only owner or admin can delete
+    /*// Authorization check: only owner or admin can delete
     if (actor.role !== UserRoleEnum.ADMIN && existingCv.user?.id !== actor.userId) {
       throw new Error('Unauthorized: Only CV owner or admin can delete');
-    }
+    }*/
     
     const result = await this.cvRepo.delete(id);
     if (result.affected) {
-      await this.logOperation('DELETE', existingCv, actor, {
-        deletedCvId: id,
-      });
-    }
-    this.eventEmitter.emit(APP_EVENTS.CV_DELETE, {
+     this.eventEmitter.emit(APP_EVENTS.CV_DELETE, {
       cv: existingCv
-    });
+    }
+    );
+    }
     return result;
-  }
+    }
 
-  streamOperations(actor: CvActorContext): Observable<MessageEvent> {
+  /*streamOperations(actor: CvActorContext): Observable<MessageEvent> {
     console.log(`SSE Stream started for user: ${actor.username} (userId: ${actor.userId}, role: ${actor.role})`);
     return this.persistenceEvents.pipe(
       filter((event) => this.canAccessEvent(actor, event)),
       map((event) => ({ type: 'cv-operation', data: event } as MessageEvent)),
     );
   }
-
-  private canAccessEvent(actor: CvActorContext, event: CvPersistenceEventPayload) {
-    // Admin can see all operations
-    if (actor.role === UserRoleEnum.ADMIN) {
-      console.log(`Admin ${actor.username} (userId: ${actor.userId}) granted access to event ${event.operationType} on CV ${event.cvId}`);
-      return true;
-    }
-
-    // Non-admin users can only see operations on their own CVs
-    if (actor.userId === null || actor.userId === undefined) {
-      console.log(`User ${actor.username} denied - no userId. Role: ${actor.role}`);
-      return false;
-    }
-
-    const hasAccess = event.cvOwnerId === actor.userId;
-    if (hasAccess) {
-      console.log(`User ${actor.username} (userId: ${actor.userId}) granted access to their CV ${event.cvId} (owner: ${event.cvOwnerId})`);
-    } else {
-      console.log(`User ${actor.username} (userId: ${actor.userId}) denied access to CV ${event.cvId} (owner: ${event.cvOwnerId})`);
-    }
-    return hasAccess;
-  }
-
-  private async logOperation(
-    operationType: CvOperationType,
-    cv: Cv,
-    actor: CvActorContext,
-    details: Record<string, unknown> | null,
-  ) {
-    const operation = await this.cvOperationRepo.save(
-      this.cvOperationRepo.create({
-        operationType,
-        actorId: actor.userId,
-        actorUsername: actor.username,
-        actorRole: actor.role,
-        cvId: cv.id,
-        cvOwnerId: cv.user?.id ?? null,
-        details,
-      }),
-    );
-
-    this.persistenceEvents.next({
-      id: operation.id,
-      operationType: operation.operationType,
-      occurredAt: operation.occurredAt,
-      actorId: operation.actorId,
-      actorUsername: operation.actorUsername,
-      actorRole: operation.actorRole,
-      cvId: operation.cvId,
-      cvOwnerId: operation.cvOwnerId,
-      details: operation.details,
-    });
-  }
+*/
 }
