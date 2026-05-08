@@ -3,12 +3,13 @@ import type { MessageEvent } from '@nestjs/common';
 import { CvService } from './cv.service';
 import { CreateCvDto } from './dto/create-cv.dto';
 import { UpdateCvDto } from './dto/update-cv.dto';
-import { fromEvent, map, Observable, merge } from 'rxjs';
+import { fromEvent, map, Observable, merge, filter } from 'rxjs';
 import { CvActorContext } from './cv-actor-context.interface';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { APP_EVENTS } from '../common/constants/app-events';
+import { UserRoleEnum } from 'src/enums/user-role.enum';
 
 @Controller('cv')
 @UseGuards(JwtAuthGuard)
@@ -42,31 +43,40 @@ export class CvController {
 
 
 
-@Sse('sse')
-sse(): Observable<MessageEvent> {
-  return merge(
-    fromEvent(this.eventEmitter, APP_EVENTS.CV_ADD).pipe(
-      map((payload: any) => ({
-        type: 'cv-added',
-        data: payload,
-      })),
-    ),
+  @Sse('sse')
+  sse(@CurrentUser() user: any): Observable<MessageEvent> {
+    return merge(
+      fromEvent(this.eventEmitter, APP_EVENTS.CV_ADD).pipe(
+        map((payload: any) => ({
+          type: 'cv-added',
+          data: payload,
+        })),
+      ),
 
-    fromEvent(this.eventEmitter, APP_EVENTS.CV_UPDATE).pipe(
-      map((payload: any) => ({
-        type: 'cv-updated',
-        data: payload,
-      })),
-    ),
+      fromEvent(this.eventEmitter, APP_EVENTS.CV_UPDATE).pipe(
+        map((payload: any) => ({
+          type: 'cv-updated',
+          data: payload,
+        })),
+      ),
 
-    fromEvent(this.eventEmitter, APP_EVENTS.CV_DELETE).pipe(
-      map((payload: any) => ({
-        type: 'cv-deleted',
-        data: payload,
-      })),
-    ),
-  );
-}
+      fromEvent(this.eventEmitter, APP_EVENTS.CV_DELETE).pipe(
+        map((payload: any) => ({
+          type: 'cv-deleted',
+          data: payload,
+        })),
+      ),
+    ).pipe(
+      filter((event: any) => {
+
+      if (user.role === UserRoleEnum.ADMIN) return true;
+
+      const cvOwnerId = event.data?.cv?.user?.id ?? event.data?.cvOwnerId;
+
+      return cvOwnerId === user.userId;
+    }),
+    );
+  }
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.cvService.findOne(id);

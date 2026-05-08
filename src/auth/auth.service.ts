@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
-
+import { JwtService } from '@nestjs/jwt';
 
 
 @Injectable()
@@ -13,6 +13,8 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private jwtService: JwtService,
+
   ) {}
 
   async register(userData: RegisterDto): Promise<Partial<User>>{
@@ -35,7 +37,7 @@ export class AuthService {
     }
   }
 
-  async login(userData: LoginDto): Promise<Partial<User>> {
+  async login(userData: LoginDto){
     const {username, password} = userData;
     const user = await this.userRepository.createQueryBuilder('user')
     .where('user.username = :username or user.email = :username',{username}).getOne();
@@ -47,11 +49,15 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, salt);
     if(bcrypt.compare(user.password, hashedPassword)){
       
-      return {
-        username: user.username,
-        email: user.email,
-        role: user.role
+      const payload = {
+          sub: user.id,
+          username: user.username,
+          role: user.role,
       };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
     }
 
     throw new NotFoundException('Username ou password erroné')
